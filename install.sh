@@ -1,40 +1,17 @@
-#!/usr/bin/env bash
-
-set -euo pipefail
-
-DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKUP_DIR="$HOME/.dotfiles-backups/$(date +%Y%m%d-%H%M%S)"
-
-echo "Installation des dotfiles depuis : $DOTFILES"
-
+```bash
 # --------------------------------------------------
-# Installation de GNU Stow si nécessaire
-# --------------------------------------------------
-
-if ! command -v stow >/dev/null 2>&1; then
-    echo "GNU Stow n'est pas installé."
-
-    if command -v apt-get >/dev/null 2>&1; then
-        sudo apt-get update
-        sudo apt-get install -y stow
-    elif command -v pacman >/dev/null 2>&1; then
-        sudo pacman -S --needed stow
-    elif command -v dnf >/dev/null 2>&1; then
-        sudo dnf install -y stow
-    elif command -v zypper >/dev/null 2>&1; then
-        sudo zypper install -y stow
-    else
-        echo "Impossible d'installer GNU Stow automatiquement."
-        exit 1
-    fi
-fi
-
-# --------------------------------------------------
-# Détection des packages
+# Détection des packages et création des répertoires
 # --------------------------------------------------
 
 PACKAGES=()
 TARGETS=()
+
+# Répertoire des images défini par l'utilisateur.
+WALLPAPERS_HOME="$(xdg-user-dir PICTURES 2>/dev/null || true)"
+
+if [ -z "$WALLPAPERS_HOME" ] || [ "$WALLPAPERS_HOME" = "$HOME" ]; then
+    WALLPAPERS_HOME="$HOME/Images"
+fi
 
 add_package() {
     local package="$1"
@@ -44,6 +21,9 @@ add_package() {
     if [ -e "$DOTFILES/$source" ]; then
         PACKAGES+=("$package")
         TARGETS+=("$target")
+
+        # Créer uniquement le répertoire parent de la cible.
+        mkdir -p "$(dirname "$target")"
     fi
 }
 
@@ -64,8 +44,8 @@ add_package dms \
     "$HOME/.config/DankMaterialShell"
 
 add_package wallpapers \
-    "wallpapers/Images/Wallpapers" \
-    "$HOME/Images/Wallpapers"
+    "wallpapers/Images/Fonds d'écran" \
+    "$WALLPAPERS_HOME/Fonds d'écran"
 
 if [ "${#PACKAGES[@]}" -eq 0 ]; then
     echo "Aucun package valide trouvé."
@@ -73,60 +53,5 @@ if [ "${#PACKAGES[@]}" -eq 0 ]; then
 fi
 
 echo "Packages : ${PACKAGES[*]}"
-
-# --------------------------------------------------
-# Sauvegarde des configurations existantes
-# --------------------------------------------------
-
-backup() {
-    local target="$1"
-
-    if [ ! -e "$target" ] && [ ! -L "$target" ]; then
-        return 0
-    fi
-
-    # Ne pas sauvegarder un lien déjà géré par ce dépôt.
-    if [ -L "$target" ]; then
-        local resolved
-        resolved="$(readlink -f "$target" || true)"
-
-        case "$resolved" in
-            "$DOTFILES"/*)
-                echo "Lien déjà géré par ce dépôt : $target"
-                return 0
-                ;;
-        esac
-    fi
-
-    local relative="${target#"$HOME"/}"
-    local destination="$BACKUP_DIR/$relative"
-
-    mkdir -p "$(dirname "$destination")"
-
-    echo "Sauvegarde : $target"
-    mkdir -p "$BACKUP_DIR"
-    mv "$target" "$destination"
-}
-
-for target in "${TARGETS[@]}"; do
-    backup "$target"
-done
-
-# --------------------------------------------------
-# Installation avec GNU Stow
-# --------------------------------------------------
-
-cd "$DOTFILES"
-
-echo
-echo "Installation des dotfiles..."
-
-stow --target="$HOME" "${PACKAGES[@]}"
-
-echo
-echo "Installation terminée."
-
-if [ -d "$BACKUP_DIR" ]; then
-    echo "Sauvegardes disponibles dans :"
-    echo "$BACKUP_DIR"
-fi
+echo "Répertoire des fonds d'écran : $WALLPAPERS_HOME/Fonds d'écran"
+```
