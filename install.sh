@@ -34,11 +34,43 @@ fi
 # --------------------------------------------------
 
 PACKAGES=()
+TARGETS=()
 
-[ -f "$DOTFILES/bash/.bashrc" ] && PACKAGES+=("bash")
-[ -f "$DOTFILES/git/.gitconfig" ] && PACKAGES+=("git")
-[ -f "$DOTFILES/tmux/.tmux.conf" ] && PACKAGES+=("tmux")
-[ -d "$DOTFILES/niri/.config/niri" ] && PACKAGES+=("niri")
+add_package() {
+    local package="$1"
+    local source="$2"
+    local target="$3"
+
+    if [ -e "$DOTFILES/$source" ]; then
+        PACKAGES+=("$package")
+        TARGETS+=("$target")
+    fi
+}
+
+add_package bash \
+    "bash/.bashrc" \
+    "$HOME/.bashrc"
+
+add_package niri \
+    "niri/.config/niri" \
+    "$HOME/.config/niri"
+
+add_package alacritty \
+    "alacritty/.config/alacritty" \
+    "$HOME/.config/alacritty"
+
+add_package dms \
+    "dms/.config/DankMaterialShell" \
+    "$HOME/.config/DankMaterialShell"
+
+add_package wallpapers \
+    "wallpapers/Images/Wallpapers" \
+    "$HOME/Images/Wallpapers"
+
+if [ "${#PACKAGES[@]}" -eq 0 ]; then
+    echo "Aucun package valide trouvé."
+    exit 1
+fi
 
 echo "Packages : ${PACKAGES[*]}"
 
@@ -49,23 +81,36 @@ echo "Packages : ${PACKAGES[*]}"
 backup() {
     local target="$1"
 
-    if [ -e "$target" ] || [ -L "$target" ]; then
-        mkdir -p "$BACKUP_DIR"
-
-        local relative="${target#$HOME/}"
-        local destination="$BACKUP_DIR/$relative"
-
-        mkdir -p "$(dirname "$destination")"
-
-        echo "Sauvegarde : $target"
-        mv "$target" "$destination"
+    if [ ! -e "$target" ] && [ ! -L "$target" ]; then
+        return 0
     fi
+
+    # Ne pas sauvegarder un lien déjà géré par ce dépôt.
+    if [ -L "$target" ]; then
+        local resolved
+        resolved="$(readlink -f "$target" || true)"
+
+        case "$resolved" in
+            "$DOTFILES"/*)
+                echo "Lien déjà géré par ce dépôt : $target"
+                return 0
+                ;;
+        esac
+    fi
+
+    local relative="${target#"$HOME"/}"
+    local destination="$BACKUP_DIR/$relative"
+
+    mkdir -p "$(dirname "$destination")"
+
+    echo "Sauvegarde : $target"
+    mkdir -p "$BACKUP_DIR"
+    mv "$target" "$destination"
 }
 
-backup "$HOME/.bashrc"
-backup "$HOME/.gitconfig"
-backup "$HOME/.tmux.conf"
-backup "$HOME/.config/niri"
+for target in "${TARGETS[@]}"; do
+    backup "$target"
+done
 
 # --------------------------------------------------
 # Installation avec GNU Stow
@@ -82,7 +127,6 @@ echo
 echo "Installation terminée."
 
 if [ -d "$BACKUP_DIR" ]; then
-    echo
-    echo "Sauvegardes créées dans :"
+    echo "Sauvegardes disponibles dans :"
     echo "$BACKUP_DIR"
 fi
