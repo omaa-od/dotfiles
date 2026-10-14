@@ -5,6 +5,10 @@ binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
 
     // === Application Launchers ===
+    
+    Super+F12 { spawn-sh "alacritty -e sh -c '/home/omjay/obsidian/pull.sh; echo; read'"; }   
+    Super+Shift+F12 { spawn-sh "alacritty -e sh -c '/home/omjay/obsidian/fast.sh; echo; read'"; }
+
     Mod+T hotkey-overlay-title="Open Terminal" { spawn "alacritty"; }
     Mod+Space hotkey-overlay-title="Application Launcher" {
         spawn "dms" "ipc" "call" "spotlight" "toggle";

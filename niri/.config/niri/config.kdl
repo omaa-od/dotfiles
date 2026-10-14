@@ -6,6 +6,8 @@ config-notification {
     disable-failed
 }
 
+spawn-at-startup "alacritty -e sh -c '/home/omjay/obsidian/pull.sh; echo; read'"
+
 gestures {
     hot-corners {
         off
