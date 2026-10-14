@@ -1,4 +1,3 @@
-```bash
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -79,4 +78,3 @@ cd "$DOTFILES"
 stow --target="$HOME" "${INSTALLED[@]}"
 
 echo "Installation terminée."
-```
