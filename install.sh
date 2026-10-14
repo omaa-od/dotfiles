@@ -1,4 +1,3 @@
-```bash
 # --------------------------------------------------
 # Détection des packages et création des répertoires
 # --------------------------------------------------
@@ -54,4 +53,3 @@ fi
 
 echo "Packages : ${PACKAGES[*]}"
 echo "Répertoire des fonds d'écran : $WALLPAPERS_HOME/Fonds d'écran"
-```
