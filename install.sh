@@ -1,55 +1,82 @@
-# --------------------------------------------------
-# Détection des packages et création des répertoires
-# --------------------------------------------------
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-PACKAGES=()
-TARGETS=()
+DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BACKUP="$HOME/.dotfiles-backups/$(date +%Y%m%d-%H%M%S)"
 
-# Répertoire des images défini par l'utilisateur.
-WALLPAPERS_HOME="$(xdg-user-dir PICTURES 2>/dev/null || true)"
-
-if [ -z "$WALLPAPERS_HOME" ] || [ "$WALLPAPERS_HOME" = "$HOME" ]; then
-    WALLPAPERS_HOME="$HOME/Images"
+# Installer GNU Stow si nécessaire
+if ! command -v stow >/dev/null 2>&1; then
+    if command -v apt-get >/dev/null 2>&1; then
+        sudo apt-get update
+        sudo apt-get install -y stow
+    elif command -v dnf >/dev/null 2>&1; then
+        sudo dnf install -y stow
+    elif command -v pacman >/dev/null 2>&1; then
+        sudo pacman -S --needed stow
+    elif command -v zypper >/dev/null 2>&1; then
+        sudo zypper install -y stow
+    else
+        echo "Erreur : installez GNU Stow manuellement."
+        exit 1
+    fi
 fi
 
-add_package() {
-    local package="$1"
-    local source="$2"
-    local target="$3"
+# Packages à installer
+PACKAGES=(bash niri alacritty dms wallpapers)
+INSTALLED=()
 
-    if [ -e "$DOTFILES/$source" ]; then
-        PACKAGES+=("$package")
-        TARGETS+=("$target")
-
-        # Créer uniquement le répertoire parent de la cible.
-        mkdir -p "$(dirname "$target")"
+for package in "${PACKAGES[@]}"; do
+    if [ -d "$DOTFILES/$package" ]; then
+        INSTALLED+=("$package")
+    else
+        echo "Package absent, ignoré : $package"
     fi
-}
+done
 
-add_package bash \
-    "bash/.bashrc" \
-    "$HOME/.bashrc"
-
-add_package niri \
-    "niri/.config/niri" \
-    "$HOME/.config/niri"
-
-add_package alacritty \
-    "alacritty/.config/alacritty" \
-    "$HOME/.config/alacritty"
-
-add_package dms \
-    "dms/.config/DankMaterialShell" \
-    "$HOME/.config/DankMaterialShell"
-
-add_package wallpapers \
-    "wallpapers/Images/Fonds d'écran" \
-    "$WALLPAPERS_HOME/Fonds d'écran"
-
-if [ "${#PACKAGES[@]}" -eq 0 ]; then
-    echo "Aucun package valide trouvé."
+if [ "${#INSTALLED[@]}" -eq 0 ]; then
+    echo "Erreur : aucun package trouvé dans $DOTFILES"
     exit 1
 fi
 
-echo "Packages : ${PACKAGES[*]}"
-echo "Répertoire des fonds d'écran : $WALLPAPERS_HOME/Fonds d'écran"
+# Sauvegarder les configurations existantes
+TARGETS=(
+    "$HOME/.bashrc"
+    "$HOME/.config/niri"
+    "$HOME/.config/alacritty"
+    "$HOME/.config/DankMaterialShell"
+    "$HOME/Images/Fonds d'écran"
+)
+
+for target in "${TARGETS[@]}"; do
+    # Ne traiter que les cibles appartenant aux packages installés
+    case "$target" in
+        "$HOME/.bashrc") package=bash ;;
+        "$HOME/.config/niri") package=niri ;;
+        "$HOME/.config/alacritty") package=alacritty ;;
+        "$HOME/.config/DankMaterialShell") package=dms ;;
+        "$HOME/Images/Fonds d'écran") package=wallpapers ;;
+    esac
+
+    [[ " ${INSTALLED[*]} " == *" $package "* ]] || continue
+
+    if [ -L "$target" ] &&
+       [[ "$(readlink -f "$target" 2>/dev/null || true)" == "$DOTFILES/"* ]]; then
+        continue
+    fi
+
+    if [ -e "$target" ] || [ -L "$target" ]; then
+        destination="$BACKUP/${target#"$HOME/"}"
+        mkdir -p "$(dirname "$destination")"
+        mkdir -p "$BACKUP"
+        mv "$target" "$destination"
+        echo "Sauvegardé : $target -> $destination"
+    fi
+done
+
+# Installer les packages
+cd "$DOTFILES"
+stow --target="$HOME" "${INSTALLED[@]}"
+
+echo "Installation terminée."
+```
