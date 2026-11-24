@@ -4,7 +4,7 @@
 // ! PLACE YOUR CUSTOM CONFIGURATION ELSEWHERE !
 
 layout {
-    gaps 4
+    gaps 25
 
     border {
         width 2
@@ -16,8 +16,23 @@ layout {
 }
 
 window-rule {
-    geometry-corner-radius 12
+    geometry-corner-radius 30
     clip-to-geometry true
     tiled-state true
     draw-border-with-background false
 }
+
+layer-rule {
+    background-effect {
+        xray false
+    }
+}
+
+window-rule {
+    match app-id="^(dev.duxlabs.shell|com.danklinux.dms|dev.duxlabs.files|dev.duxlabs.calendar)$"
+    background-effect {
+        xray false
+    }
+}
+
+// bar-xray off

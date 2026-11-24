@@ -6,7 +6,6 @@ config-notification {
     disable-failed
 }
 
-spawn-at-startup "alacritty -e sh -c '/home/omjay/obsidian/pull.sh; echo; read'"
 
 gestures {
     hot-corners {
@@ -70,8 +69,12 @@ input {
 // Find more information on the wiki:
 // https://github.com/YaLTeR/niri/wiki/Configuration:-Layout
 layout {
+	focus-ring {
+		off
+	}
     // Set gaps around windows in logical pixels.
     background-color "transparent"
+    always-center-single-column
     // When to center a column when changing focus, options are:
     // - "never", default behavior, focusing an off-screen column will keep at the left
     //   or right edge of the screen.
@@ -93,7 +96,7 @@ layout {
     // You can also customize the heights that "switch-preset-window-height" (Mod+Shift+R) toggles between.
     // preset-window-heights { }
     // You can change the default width of the new windows.
-    default-column-width { proportion 0.5; }
+    default-column-width { proportion 0.66667; }
     // If you leave the brackets empty, the windows themselves will decide their initial width.
     // default-column-width {}
     // By default focus ring and border are rendered as a solid background rectangle
@@ -208,8 +211,9 @@ window-rule {
     match app-id=r#"^blueman-manager$"#
     match app-id=r#"^org\.gnome\.Nautilus$"#
     match app-id=r#"^xdg-desktop-portal$"#
-    open-floating true
+    open-floating false
 }
+
 window-rule {
     match app-id=r#"^steam$"# title=r#"^notificationtoasts_\d+_desktop$"#
     default-floating-position x=10 y=10 relative-to="bottom-right"

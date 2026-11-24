@@ -10,9 +10,9 @@ input {
     touchpad {
         tap
         accel-speed 0.0
+        accel-profile "adaptive"
         natural-scroll
         dwt
         scroll-factor 0.3
     }
 }
-
